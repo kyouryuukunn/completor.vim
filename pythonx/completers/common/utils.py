@@ -53,7 +53,6 @@ def test_subseq(src, target):
     if not src:
         return 0
     if not vim.vars.get('completor_fuzzy_match'):
-        print('no fuzzy')
         if target.startswith(src):
             return 0
         else:
