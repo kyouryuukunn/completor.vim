@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import re
+import re, vim
 
 LIMIT = 50
 REGEX_MAP = {
@@ -52,6 +52,12 @@ for k, v in list(REGEX_MAP.items()):
 def test_subseq(src, target):
     if not src:
         return 0
+    if not vim.vars.get('completor_fuzzy_match'):
+        print('no fuzzy')
+        if target.startswith(src):
+            return 0
+        else:
+            return
 
     score = i = 0
     src, target = src.lower(), target.lower()

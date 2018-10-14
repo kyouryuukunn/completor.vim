@@ -179,6 +179,12 @@ Other                                                   *completor-other*
 
         Default: 80
 
+*g:completor_fuzzy_match*
+	Enable or Disable an ambiguous searching for buffer and filename
+	completers.
+
+        Defaut: 1
+
 *g:completor_complete_options*
         Set complete options for completor. The config `completeopt` will be 
         overwritten by the value when the completion is triggered and restored
