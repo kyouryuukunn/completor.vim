@@ -2,10 +2,16 @@
 
 import uuid
 import json
+import logging
+import vim
+from completor import Completor
+from completor.compat import to_unicode
+logger = logging.getLogger('completor')
 
 JSONRPC_VERSION = '2.0'
 
-# Workflow: initilize -> initialized -> open -> completion
+# Workflow: initilize -> initialized -> didchangeconfiguration -> open
+# -> completion
 
 
 class Base(object):
@@ -46,7 +52,7 @@ class Initialize(Base):
         return {
             'processId': self.ppid,
             'capabilities': {
-                'workspace': {},
+                'workspace': {'configuration': True},
                 'textDocument': {}
             },
             'rootUri': self.workspace[0]['uri'],
@@ -60,6 +66,46 @@ class Initialized(Base):
 
     def to_dict(self):
         return {}
+
+
+class DidChangeConfiguration(Base):
+    method = 'workspace/didChangeConfiguration'
+    notify = True
+
+    def __init__(self, filetype):
+        m = Completor.get_option('filetype_map') or {}
+        m = m.get(filetype, {})
+
+        # convert vim.Dictionary to python dic
+        def to_python_type(vim_type):
+            if isinstance(vim_type, vim.Dictionary):
+                python_type = {}
+                keys = vim_type.keys()
+                for k in keys:
+                    v = vim_type.get(k)
+                    python_type[to_unicode(k, 'utf-8')] = to_python_type(v)
+            elif isinstance(vim_type, vim.List):
+                python_type = []
+                for i in vim_type:
+                    python_type.append(to_python_type(i))
+            elif isinstance(vim_type, bytes):
+                python_type = to_unicode(vim_type, 'utf-8')
+            else:
+                python_type = vim_type
+            return python_type
+
+        self.config = {}
+        if m.has_key('workspace_config'):
+            vimm = m.get('workspace_config')
+            self.config = to_python_type(vimm)
+        else:
+            self.config = {}
+        logger.info('config: %r', self.config)
+
+    def to_dict(self):
+        return {
+            'settings': self.config
+        }
 
 
 class DidOpen(Base):
