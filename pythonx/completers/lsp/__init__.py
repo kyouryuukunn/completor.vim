@@ -9,8 +9,8 @@ import io
 from completor import Completor, vim, import_completer, get
 from completor.compat import to_unicode
 
-from .models import Initialize, DidOpen, Completion, DidChange, DidSave, \
-    Definition, Format, Rename, Hover
+from .models import Initialize, DidChangeConfiguration, DidOpen, Completion, \
+    DidChange, DidSave, Definition, Format, Rename, Hover, Initialized
 from .action import gen_definition, get_completion_word
 from .utils import gen_uri
 
@@ -47,6 +47,15 @@ class Lsp(Completor):
             'name': project_name
         }])
         _, req = i.to_request()
+        return req
+
+    def initialized_request(self):
+            _, req = Initialized().to_request()
+            return req
+
+    def didchangeconfiguration_request(self):
+        c = DidChangeConfiguration(self.ft_orig)
+        _, req = c.to_request()
         return req
 
     @property
@@ -107,6 +116,11 @@ class Lsp(Completor):
             if not self.initialized:
                 items.append(self.initialize_request(project_name, pwd))
                 self.initialized = True
+                items.append(self.initialized_request())
+                setting = self.didchangeconfiguration_request()
+                if setting:
+                    items.append(setting)
+                return ''.join(items)
             req = self.open_request()
             if req:
                 items.append(req)
